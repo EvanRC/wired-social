@@ -3,6 +3,9 @@ const app = express();
 const mongoose = require('mongoose'); // require mongoose
 const { User, Thought } = require('./models');
 const userRoutes = require('./routes/userRoutes');
+const thoughtRoutes =  require('./routes/thoughtRoutes');
+const friendRoutes = require('./routes/friendRoutes');
+const reactionRoutes = require('./routes/reactionRoutes');
 require('dotenv').config();
 
 // Defined the mongoDB URI (Uniform Resoure Identifer).
@@ -15,7 +18,10 @@ mongoose.connect(mongoDBUri, // Connects to the MongoDb using the mongoose.connc
 .catch(err => console.error('There was a connection error', err)); // If an error occurs, logs the error message to the console.
 
 app.use(express.json()); // for parsing application/json
-app.use(userRoutes); // Use the user routes
+app.use('/api/users', userRoutes); // Use the user routes
+app.use('/api/thoughts', thoughtRoutes); // Use the thoughts route
+app.use('/api/reactions', reactionRoutes); // Use the reaction routes 
+app.use('/api/friends',friendRoutes); //  Use the friends route
 
 const PORT = process.env.PORT || 3000;
 
