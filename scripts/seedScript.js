@@ -17,7 +17,7 @@ const seedDatabase = async () => {
     });
     
     // iterate over each thought document
-    for (let thought of thoughtDocs) { 
+    for (let thought of thoughts) { 
         // Find the user document in the map using the thought's username 
         if (User[thought.username]) {
             // Push the thought's ID to the corresponding user's thoughts array 
