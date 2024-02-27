@@ -1,10 +1,15 @@
 const mongoose = require('mongoose');
 const { User, Thought } = require('../models/index');
+const { watch } = require('../models/user');
+require('dotenv').config();
 
-mongoose.connect('mongodb://localhost:27017', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+// Use the mongoDB URI from your .env file or default to a MongoDB URInod
+const mongoDBUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/wiredSocialDB';
+
+// // Connect mongoose to MongoDB
+// mongoose.connect(mongoDBUri)
+// .then (() => console.log('Successfully connected to MongoDB!'))
+// .catch(err => console.error('There was a connection error', err));
 
 const seedUsers = [ // Array of users to seed the mongoDB for testing purposes
     {
@@ -32,9 +37,9 @@ const seedThoughts = [
     {
         thoughtText: "An introspective thought by one Jeremy...",
         username: 'Jeremy',
-        Reations: [
+        reactions: [
             {
-                thoughtText: "Kinda overcomplicating life again man.",
+                reactionBody: "Kinda overcomplicating life again man.",
                 username: 'Tommy'
             }
         ]
@@ -44,8 +49,8 @@ const seedThoughts = [
         username: 'Tommy',
         reactions: [
             {
-                thoughtText: "Maybe you need to overcomplicate life more!",
-                username: 'Jermey'
+                reactionBody: "Maybe you need to overcomplicate life more!",
+                username: 'Jeremy'
             }
         ]
     },
@@ -54,11 +59,11 @@ const seedThoughts = [
         username: 'Chloe',
         reactions: [
             {
-                thoughtText: "Wish I could slow down and just enjoy the simple things in life like you!",
+                reactionBody: "Wish I could slow down and just enjoy the simple things in life like you!",
                 username: 'Jeremy',
                 reactions: [
                     {
-                     thoughtText: "I thought you told me to just overcomplicate my life! @Jeremy",
+                     reactionBody: "I thought you told me to just overcomplicate my life! @Jeremy",
                      username: 'Tommy'
                     }
                 ]
@@ -74,20 +79,26 @@ const seedThoughts = [
 const seedUserData = async () => {
     await User.deleteMany({});
     await User.insertMany(seedUsers);
-    console.log('Seeded the user successfully!');
+    console.log('Seeded users successfully!');
 };
 
 //Function to seed Thought data
 const seedThoughtData = async () => {
-    await seedUserData();
-    await seedThoughtData();
+    await Thought.insertMany(seedThoughts);
     console.log ('Seeded thoughts succesfully!');
 };
 
 const seedDatabase = async () => {
-    await seedUserData();
-    await seedThoughtData();
-    mongoose.connection.close();
+    try {
+        await seedUserData();
+        await seedThoughtData();
+        console.log('Database was seeded successfully!');
+    } catch (err) {
+        console.error(' An error occured while seeding the database...:', err)
+    } finally {
+        await mongoose.connection.close();
+        console.log('Mongoose connection disconnected');
+    }
 };
 
-seedDatabase();
+module.exports = seedDatabase;
