@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { User } = require('../models/user')
+const { Thought, User } = require('../models/index');
+
+
 
 // Get all the users
-router.get('./api/users', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const users = await User.find().select('-_ _v'); // Exclude the version key from the result
+        const users = await User.find().select('-__v'); // Exclude the version key from the result
         res.json(users);
     } catch (err) {
         res.status(500).send(err.message);
@@ -13,10 +15,10 @@ router.get('./api/users', async (req, res) => {
 })
 
 // Get a single User by it's ID
-router.get('/api/users/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
         const user = await User.findById(req.params.id)
-            .select('-_ _v')
+            .select('-__v')
             .populate('thoughts')
             .populate('friends');
         if (!user) {
@@ -29,20 +31,20 @@ router.get('/api/users/:id', async (req, res) => {
 });
 
 // Create a new user
-router.post('/api/users', async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const newUser = new User(req.body);
-        const user = await newUser.save();
-        res.status(201).json(user);
+        const savedUser = await newUser.save();
+        res.status(201).json(savedUser);
     } catch (err) {
         res.status(400).send(err.message);
     }
 });
 
 // Update a user by _id
-router.put('/api/users/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
-        const user = await user.findByIdAndUpdate(req.params.id, req.body,
+        const user = await User.findByIdAndUpdate(req.params.id, req.body,
             { new: true, runValidators: true });
             if(!user) {
                 return res.status(404).json({ message: 'No user found with this ID!' });
@@ -54,16 +56,30 @@ router.put('/api/users/:id', async (req, res) => {
 });
 
 // Delete a user by _id
-router.delete('/api/users/:id', async (req, res) => {
-    try {
-        const user = await User.findByIdAndDelete(req.params.id);
-        if (!user) {
-            return res.status(404).json({ message: ' No user found with this id!' });
-        }
-        res.json({ message: 'User was successfully Terminated!' });
-    } catch (err) {
-        res.status(500).send(err.message);
+router.delete('/:id', async (req, res) => {
+ try {
+    // Find and delete the user by the Id
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+    if(!deletedUser) {
+        return res.status(404).json({ message: 'No user found with this Id' });
     }
+
+    // find all thoughts that are associated with the user
+    const deletedThoughts = await Thought.deleteMany({ userId: req.params.id });
+
+        // Send response indicating successful deletion
+        res.json({
+            message: 'User and associated thoughts successfully terminated!',
+            deletedUser,
+            deletedThoughts
+        });    
+ } catch (err) {
+    // Handle the errors
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
+ }
+
 });
 
 // Post to add a friend to a user's friend list
@@ -87,10 +103,10 @@ router.post('/:userId/friends/:friendId', async (req, res) => {
 });
 
 // Delete to remove a friend from a user's friends list 
-router.delete('/userId/friends/:friendId', async (req, res) => {
+router.delete('/:userId/friends/:friendId', async (req, res) => {
     try {
         // Remove friendId from the userId's friends list
-        const user =  await user.findByIdAndUpdate(
+        const user =  await User.findByIdAndUpdate(
             req.params.userId,
             { $pull: { friends: req.params.friendId } },
             { new: true }

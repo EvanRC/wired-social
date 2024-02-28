@@ -3,9 +3,9 @@ const router = express.Router();
 const { Thought, User } = require('../models/index');
 
 // Get all thoughts
-router.get('/api/thoughts', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const thought = await Thought.find().select('-_ _v');
+        const thought = await Thought.find().select('-__v');
         res.json(thought);
     } catch (err) {
         res.status(500).json(err);
@@ -13,9 +13,9 @@ router.get('/api/thoughts', async (req, res) => {
 });
 
 // Get a single thought by _id
-router.get('/api/thoughts/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
     try { 
-        const thought = await Thought.findById(req.params.id).select('-_ _v');
+        const thought = await Thought.findById(req.params.id).select('-__v');
         if (!thought) {
             return res.status(404).json({ message: 'No thought found with this id!' });
         }
@@ -26,7 +26,7 @@ router.get('/api/thoughts/:id', async (req, res) => {
 });
 
 // Create a new thought
-router.post('/api/thoughts', async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const thought = await Thought.create(req.body);
         await User.findByIdAndUpdate(
@@ -41,34 +41,39 @@ router.post('/api/thoughts', async (req, res) => {
 });
 
 // Update a thought b it's id
-router.put('/api/thoughts/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
-        const thought = await Thought.findByIdAndUpdate(req.params.id);
+        const thought = await Thought.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { new: true, runValidators: true } // Ensures the updated document is returned and validations are run
+        );
         if (!thought) {
-            return res.status(404).json({ message: 'No thought found with this id!' }); 
+            return res.status(404).json({ message: 'No thought found with this id!' });
         }
         res.json(thought);
     } catch (err) {
-    res.status(400).json(err);
+        res.status(400).json(err);
     }
 });
 
 // Delete a thought by an id
-router.delete('/api/thoughts/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
-        const thought = await Thought.findByIdAndRemove(req.params.id);
-        if (!thought) {
+        const deletedThought = await Thought.findOneAndDelete({ _id: req.params.id });
+        if (!deletedThought) {
             return res.status(404).json({ message: 'No thought found with this id' });
         }
         // remove the thought reference from the user's thought array
         await User.findByIdAndUpdate(
-            thought.userId,
+            deletedThought.userId,
             { $pull: { thoughts: req.params.id } },
             { new: true }
         );
         res.json({ message: 'Thought successfully deleted' });
     } catch (err) {
-        res.status(500).json(err);
+        console.error(err); // Log the error to see more details
+        res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 });
 
@@ -76,42 +81,39 @@ router.delete('/api/thoughts/:id', async (req, res) => {
 router.post('/:thoughtId/reactions', async (req,res) => {
     try {
         // Add a reaction to the reactions array of a thought by it's ID
-        const thought = await Thought.findByIdAndUpdate(
+        const reactThought = await Thought.findByIdAndUpdate(
             req.params.thoughtId,
             { $push: { reactions:req.body } },
             { new: true, runValidators: true }
         );
 
-        if (!thought) {
+        if (!reactThought) {
             return res.status(404).json({ message: 'No thought found with this id!' });
         }
 
-        res.json(thought);
+        res.json(reactThought);
     } catch (err) { 
         res.status(400).json(err);
     }
 });
 
 // Delete a reaction
-router.delete('/:thoughId/reactions/:reactionId', async (req, res) => {
+router.delete('/:thoughtId/reactions/:reactionId', async (req, res) => {
     try {
-        // Remove a reaction from the reactions arrau of a thought by the reactionId
-        const thought = await Thought.findByIdAndUpdate(
+        const updatedThought = await Thought.findByIdAndUpdate(
             req.params.thoughtId,
             { $pull: { reactions: { _id: req.params.reactionId } } },
             { new: true }
         );
 
-        if(thought) {
-            returnres.status(404).json({ message: 'No thought found with this id or the reaction does not exist!' });
-        };
+        if (!updatedThought) {
+            return res.status(404).json({ message: 'No thought found with this id!' });
+        }
 
-        res.json(thought);
+        res.json(updatedThought);
     } catch (err) {
         res.status(400).json(err);
     }
 });
-
-
 
 module.exports = router;
