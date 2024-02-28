@@ -12,7 +12,6 @@ It utilizes express, MongoDB, and Mongoose.
 
 - [Installations](#installations)
 - [Usage](#usage)
-- [Credits](#credits)
 - [license](#license)
 
 ## Installation
