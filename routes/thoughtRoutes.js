@@ -110,7 +110,17 @@ router.delete('/:thoughtId/reactions/:reactionId', async (req, res) => {
             return res.status(404).json({ message: 'No thought found with this id!' });
         }
 
-        res.json(updatedThought);
+        // Create a new object with only the necessary fields
+        const updatedThoughtWithoutReaction = {
+            _id: updatedThought._id,
+            thoughtText: updatedThought.thoughtText,
+            username: updatedThought.username,
+            reactions: updatedThought.reactions,
+            createdAt: updatedThought.createdAt,
+            reactionCount: updatedThought.reactions.length // Optionally include the reaction count
+        };
+
+        res.json(updatedThoughtWithoutReaction);
     } catch (err) {
         res.status(400).json(err);
     }
