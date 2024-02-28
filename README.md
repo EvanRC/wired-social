@@ -22,6 +22,9 @@ Clone the repo. Then install dependencies in the app.
 
 You can use this app via insomnia. Use the the moodel schemah's and routes created to work within the database..
 
+## Video Walkthrough:
+https://app.screencastify.com/v3/watch/JHcHQwOqlQFHxPe96f1c
+
 
 ## License
 
